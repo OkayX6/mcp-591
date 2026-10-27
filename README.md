@@ -147,6 +147,11 @@ Returns: price, deposit, floor area, floor, building type, layout, address with 
 
 ---
 
+## 591 Swipe (web app)
+
+`swipe591/` is a private swipe-style web app for new rental listings, built on the same
+client. See [swipe591/README.md](swipe591/README.md).
+
 ## Development
 
 ### Setup from Source

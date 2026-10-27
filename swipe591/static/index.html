@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e8505b">
+  <title>591 Swipe</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <section id="login" class="screen" hidden>
+    <form id="login-form" class="login-card">
+      <h1>591 Swipe</h1>
+      <input id="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+      <button type="submit" class="primary">Entrer</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <main id="app" hidden>
+    <header class="topbar">
+      <h1>591 Swipe</h1>
+      <span id="deck-count" class="muted"></span>
+    </header>
+
+    <section id="view-deck" class="view">
+      <div id="deck" class="deck" aria-live="polite"></div>
+      <p id="deck-empty" class="empty" hidden>Plus rien à voir. Le poller passe toutes les 30 min.</p>
+      <div class="actions">
+        <button id="btn-undo" class="round small" title="Annuler" aria-label="Annuler">↶</button>
+        <button id="btn-dislike" class="round nope" title="Non (←)" aria-label="Non">✕</button>
+        <button id="btn-superlike" class="round super" title="Coup de cœur (↑)" aria-label="Coup de cœur">★</button>
+        <button id="btn-like" class="round like" title="Oui (→)" aria-label="Oui">♥</button>
+        <button id="btn-info" class="round small" title="Détail" aria-label="Détail">i</button>
+      </div>
+    </section>
+
+    <section id="view-liked" class="view" hidden><ul class="list" id="liked-list"></ul></section>
+    <section id="view-disliked" class="view" hidden><ul class="list" id="disliked-list"></ul></section>
+
+    <section id="view-searches" class="view" hidden>
+      <ul class="list" id="search-list"></ul>
+      <form id="search-form" class="search-form">
+        <h2 id="search-form-title">Nouvelle recherche</h2>
+        <input type="hidden" name="id">
+        <label>Nom <input name="name" required placeholder="Zhongli 3 pièces"></label>
+        <label>Ville <select name="region" required></select></label>
+        <label>Quartier <select name="section"></select></label>
+        <label>Type <select name="kind"></select></label>
+        <label>Immeuble <select name="shape"></select></label>
+        <label>Pièces <select name="pattern"></select></label>
+        <div class="row">
+          <label>Loyer min <input name="price_min" type="number" min="0" step="1000" inputmode="numeric"></label>
+          <label>Loyer max <input name="price_max" type="number" min="0" step="1000" inputmode="numeric"></label>
+        </div>
+        <label>Mots-clés <input name="keywords" placeholder="捷運"></label>
+        <label class="check"><input name="active" type="checkbox" checked> Active</label>
+        <p id="search-error" class="error" role="alert"></p>
+        <div class="row">
+          <button type="submit" class="primary">Enregistrer</button>
+          <button type="reset" id="search-reset">Nouvelle</button>
+        </div>
+      </form>
+    </section>
+
+    <nav class="tabs">
+      <button data-view="deck" class="active">Swipe</button>
+      <button data-view="liked">Likés</button>
+      <button data-view="disliked">Rejetés</button>
+      <button data-view="searches">Recherches</button>
+    </nav>
+  </main>
+
+  <dialog id="detail"><div id="detail-body"></div><form method="dialog"><button class="primary">Fermer</button></form></dialog>
+
+  <template id="card-template">
+    <article class="card">
+      <div class="photo"><img alt="" referrerpolicy="no-referrer" draggable="false"><div class="dots"></div></div>
+      <div class="stamp stamp-like">OUI</div><div class="stamp stamp-nope">NON</div><div class="stamp stamp-super">★</div>
+      <div class="info">
+        <div class="price"></div>
+        <div class="title"></div>
+        <div class="meta"></div>
+        <div class="tags"></div>
+      </div>
+    </article>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
