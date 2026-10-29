@@ -3,7 +3,9 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from swipe591.poller import poll_once, price_range
+from mcp_591.rent import map_rent_detail
+from swipe591.directus import DirectusError
+from swipe591.poller import listing_record, poll_once, price_range
 from swipe591.store import MemoryStore
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -119,3 +121,50 @@ def test_open_ended_price_range_gets_a_high_ceiling():
 
 def test_no_price_bounds_means_no_price_filter():
     assert price_range({"price_min": None, "price_max": None}) is None
+
+
+class RefusingStore(MemoryStore):
+    """Like Directus answering 500 to the records it can't store."""
+
+    def __init__(self, refuse):
+        super().__init__()
+        self._refuse = refuse
+
+    def add_listing(self, listing: dict) -> None:
+        if self._refuse(listing):
+            raise DirectusError("Directus POST /items/apt_listings answered 500")
+        super().add_listing(listing)
+
+
+def test_one_refused_listing_does_not_stop_the_others():
+    store = RefusingStore(refuse=lambda listing: listing["post_id"] == FIRST_ID)
+    store.create_search(ZHONGLI_3_ROOMS)
+    added = poll_once(store, Fake591(), clock=lambda: NOW)
+    assert added == len(SEARCH_PAGE["data"]["items"]) - 1
+
+
+def test_refused_listing_stays_unknown_for_the_next_poll():
+    store = RefusingStore(refuse=lambda listing: listing["post_id"] == FIRST_ID)
+    store.create_search(ZHONGLI_3_ROOMS)
+    poll_once(store, Fake591(), clock=lambda: NOW)
+    assert store.get_listing(FIRST_ID) is None
+
+
+def test_listing_refused_with_its_detail_is_stored_as_a_bare_card():
+    store = RefusingStore(refuse=lambda listing: "detail" in listing)
+    store.create_search(ZHONGLI_3_ROOMS)
+    poll_once(store, Fake591(), clock=lambda: NOW)
+    assert store.get_listing(FIRST_ID)["title"] == SEARCH_PAGE["data"]["items"][0]["title"]
+
+
+def test_null_bytes_are_removed_from_the_remark():
+    detail = map_rent_detail(DETAIL, FIRST_ID)
+    detail["remark"] = "近捷運\x00，可養寵物\n押二付一"
+    record = listing_record(SEARCH_PAGE["data"]["items"][0], detail, search_id=1, seen_at=NOW)
+    assert record["detail"]["remark"] == "近捷運，可養寵物\n押二付一"
+
+
+def test_title_longer_than_a_directus_string_is_cut_to_255():
+    item = {**SEARCH_PAGE["data"]["items"][0], "title": "青埔捷運高鐵" * 70}
+    record = listing_record(item, {}, search_id=1, seen_at=NOW)
+    assert len(record["title"]) == 255
