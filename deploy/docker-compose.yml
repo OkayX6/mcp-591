@@ -1,0 +1,25 @@
+# 591 Swipe on the droplet, next to the back-office gateway. Its Watchtower
+# (label-enabled, in back-office-gateway/deploy/docker-compose.yml) also
+# updates these two containers: they carry the same label.
+#
+# .env (never in the repo) holds: SWIPE_IMAGE, DIRECTUS_URL, DIRECTUS_TOKEN
+# (the `apt-swipe` role's token, not admin), SWIPE_PASSWORD,
+# SWIPE_SESSION_SECRET (any long random string; changing it signs everyone out).
+services:
+  web:
+    image: ${SWIPE_IMAGE:?Set SWIPE_IMAGE in .env}
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    env_file: .env
+    # Loopback only: the HTTPS reverse proxy in front of it is the public side.
+    ports:
+      - "127.0.0.1:5290:8080"
+
+  poller:
+    image: ${SWIPE_IMAGE:?Set SWIPE_IMAGE in .env}
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    env_file: .env
+    command: ["python", "-m", "swipe591.poller"]

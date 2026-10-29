@@ -1,0 +1,50 @@
+name: swipe591 image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mcp_591/**"
+      - "swipe591/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Dockerfile"
+      - ".github/workflows/swipe-image.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8.1.0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - run: uv sync --dev
+      - run: uv run pytest
+
+  docker-publish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.digitalocean.com
+          username: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          password: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      # vars.SWIPE_IMAGE is the full ref including tag, equal to SWIPE_IMAGE in
+      # the droplet's deploy/.env: Watchtower polls that exact tag.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          provenance: false
+          sbom: false
+          build-args: GIT_SHA=${{ github.sha }}
+          tags: |
+            ${{ vars.SWIPE_IMAGE }}
+            ${{ vars.SWIPE_IMAGE }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
