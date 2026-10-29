@@ -46,8 +46,11 @@ def query_for(search: dict) -> dict:
 
 
 def parse_price(text) -> int | None:
-    digits = "".join(c for c in str(text or "") if c.isdigit())
-    return int(digits) if digits else None
+    """The monthly rent, as an integer. A range ("25,000~35,000", for a listing
+    with several rooms) gives its low end: gluing all its digits together made
+    an integer Directus' int column can't hold, refused with a bare 500."""
+    match = re.search(r"\d[\d,]*", str(text or ""))
+    return int(match.group().replace(",", "")) if match else None
 
 
 # Directus `string` fields are varchar(255): a longer 591 title or address

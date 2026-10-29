@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mcp_591.rent import map_rent_detail
 from swipe591.directus import DirectusError
-from swipe591.poller import listing_record, poll_once, price_range
+from swipe591.poller import listing_record, parse_price, poll_once, price_range
 from swipe591.store import MemoryStore
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -168,3 +168,15 @@ def test_title_longer_than_a_directus_string_is_cut_to_255():
     item = {**SEARCH_PAGE["data"]["items"][0], "title": "青埔捷運高鐵" * 70}
     record = listing_record(item, {}, search_id=1, seen_at=NOW)
     assert len(record["title"]) == 255
+
+
+def test_rent_with_thousands_separator():
+    assert parse_price("32,000") == 32000
+
+
+def test_rent_range_keeps_its_low_end():
+    assert parse_price("25,000~35,000") == 25000
+
+
+def test_rent_without_a_number_is_unknown():
+    assert parse_price("面議") is None
